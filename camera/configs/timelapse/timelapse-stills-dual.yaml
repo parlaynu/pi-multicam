@@ -1,0 +1,106 @@
+# the cameras
+camera_rgb:
+  __target__: camkit.camera.Camera
+  camera_id: {{ camera_id | default(0) }}
+  mode: {{ camera_mode | default(1) }}
+  vflip: false
+  hflip: false
+  preview: false
+
+camera_noir:
+  __target__: camkit.camera.Camera
+  camera_id: {{ 1 - (camera_id | default(0) | int )}}
+  mode: {{ camera_mode | default(1) }}
+  vflip: false
+  hflip: false
+  preview: false
+
+
+# configure the cameras
+configure_rgb:
+  - __target__: camkit.camera.set_whitebalance
+    camera:
+      __instance__: camera_rgb
+  - __target__: camkit.camera.set_exposure
+    camera:
+      __instance__: camera_rgb
+    wait: true
+  - __target__: camkit.camera.set_focus
+    camera:
+      __instance__: camera_rgb
+    mode:
+      __enum__: camkit.camera.AfModeEnum.CONTINUOUS
+    not_available_ok: true
+    wait: true
+  - __target__: camkit.utils.save_camera_configs
+    camera:
+      __instance__: camera_rgb
+    outdir: {{ output_dir }}
+    prefix: cam-rgb
+
+configure_noir:
+  - __target__: camkit.camera.set_whitebalance
+    camera:
+      __instance__: camera_noir
+  - __target__: camkit.camera.set_exposure
+    camera:
+      __instance__: camera_noir
+    wait: true
+  - __target__: camkit.camera.set_focus
+    camera:
+      __instance__: camera_noir
+    mode:
+      __enum__: camkit.camera.AfModeEnum.CONTINUOUS
+    not_available_ok: true
+    wait: true
+  - __target__: camkit.utils.save_camera_configs
+    camera:
+      __instance__: camera_noir
+    outdir: {{ output_dir }}
+    prefix: cam-noir
+
+
+# the pipeline of generators
+pipeline_control:
+  - __target__: camkit.ops.control.simple
+    fps: {{ 1.0 / (timelapse_seconds | default(60) | int) }}
+    max_frames: 10
+  - __target__: camkit.ops.utils.tee
+    count: 2
+    threaded: true
+  
+pipeline_noir:
+  - __instance__: pipeline_control
+  - __target__: camkit.ops.camera.capture
+    camera:
+      __instance__: camera_noir
+    arrays:
+      - main
+      - raw
+  - __target__: camkit.ops.utils.worker
+
+pipeline_rgb:
+  - __instance__: pipeline_control
+  - __target__: camkit.ops.camera.capture
+    camera:
+      __instance__: camera_rgb
+    arrays:
+      - main
+      - raw
+  - __target__: camkit.ops.utils.worker
+
+pipeline:
+  - __target__: camkit.ops.utils.zip
+    pipe1:
+      __instance__: pipeline_noir
+    name1: noir
+    pipe2:
+      __instance__: pipeline_rgb
+    name2: rgb
+  - __target__: camkit.ops.sink.save_item
+    outdir: {{ output_dir }}
+  - __target__: camkit.ops.sink.save_rgb
+    outdir: {{ output_dir }}
+  - __target__: camkit.ops.sink.save_raw
+    outdir: {{ output_dir }}
+

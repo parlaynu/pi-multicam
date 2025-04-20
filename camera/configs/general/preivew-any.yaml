@@ -1,0 +1,43 @@
+# the camera
+camera:
+  __target__: camkit.camera.Camera
+  camera_id: {{ camera_id | default(0) }}
+  mode: {{ camera_mode | default(3) }}
+  max_fps: 30
+  vflip: {{ vflip | default(false) }}
+  hflip: {{ hflip | default(false) }}
+  preview: true
+  preview_crop: true
+  # preview_crop_offsets:
+  #   - 0
+  #   - 0
+
+# configure the camera
+configure_cam:
+  - __target__: camkit.camera.set_whitebalance
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AwbModeEnum.AUTO
+  - __target__: camkit.camera.set_exposure
+    camera:
+      __instance__: camera
+    metering_mode:
+      __enum__: camkit.camera.MeteringModeEnum.MATRIX
+    wait: true
+
+
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.control.simple
+  - __target__: camkit.ops.camera.capture
+    camera:
+      __instance__: camera
+    arrays:
+      - main
+    immediate: true
+    blocking: false
+  - __target__: camkit.ops.debug.dump
+    key: metadata
+    interval: {{ dump_interval | default(10) }}
+    drop: true

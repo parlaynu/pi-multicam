@@ -1,0 +1,59 @@
+# the camera
+camera:
+  __target__: camkit.camera.Camera
+  camera_id: {{ camera_id | default(0) }}
+  mode: {{ camera_mode | default(1) }}
+  vflip: false
+  hflip: false
+  preview: false
+  max_fps: {{ max_fps | default(5) }}
+  tuning_file: imx477_noir.json
+
+
+# configure the camera
+configure_cam:
+  - __target__: camkit.camera.set_whitebalance
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AwbModeEnum.AUTO
+  - __target__: camkit.camera.set_exposure
+    camera:
+      __instance__: camera
+    metering_mode:
+      __enum__: camkit.camera.MeteringModeEnum.SPOT
+    wait: true
+  - __target__: camkit.camera.set_focus
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AfModeEnum.AUTO
+    not_available_ok: true
+    wait: true
+  - __target__: camkit.utils.save_camera_configs
+    camera:
+      __instance__: camera
+    outdir: {{ output_dir }}
+
+
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.control.simple
+    max_frames: {{ max_frames | default(10) }}
+  - __target__: camkit.ops.camera.capture
+    camera:
+      __instance__: camera
+    arrays:
+      - main
+    immediate: true
+  - __target__: camkit.ops.imaging.resize
+    width: 1280
+    height: 720
+    preserve_aspect: true
+  - __target__: camkit.ops.debug.dump
+    key: metadata
+    interval: {{ (max_frames | default(10) | int ) - 1 }}
+  - __target__: camkit.ops.sink.save_item
+    outdir: {{ output_dir }}
+  - __target__: camkit.ops.sink.save_rgb
+    outdir: {{ output_dir }}

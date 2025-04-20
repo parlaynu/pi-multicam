@@ -1,0 +1,9 @@
+local/
+build/
+install/
+
+*.egg-info/
+__pycache__/
+
+.DS_Store
+

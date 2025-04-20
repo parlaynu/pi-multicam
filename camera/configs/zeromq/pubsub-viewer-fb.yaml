@@ -1,0 +1,8 @@
+# the viewer
+pipeline:
+  - __target__: camkit.ops.network.subscriber
+    publish_url: {{ publish_url }}
+  - __target__: camkit.ops.imaging.scale
+    factor: {{ scale_factor | default(1.0) }}
+  - __target__: camkit.ops.viewer.viewer_fb
+

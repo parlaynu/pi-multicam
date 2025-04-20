@@ -1,0 +1,56 @@
+# the camera
+camera:
+  __target__: camkit.camera.Camera
+  camera_id: {{ camera_id | default(0) }}
+  mode: {{ camera_mode | default(1) }}
+  vflip: {{ vflip | default(false) }}
+  hflip: {{ hflip | default(false) }}
+  preview: {{ preview | default(false) }}
+  tuning_file: {{ tuning_file | default(null) }}
+  max_fps: {{ fps | default(10) }}
+
+
+# configure the camera
+configure_cam:
+  - __target__: camkit.camera.set_whitebalance
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AwbModeEnum.AUTO
+  - __target__: camkit.camera.set_exposure
+    camera:
+      __instance__: camera
+    metering_mode:
+      __enum__: camkit.camera.MeteringModeEnum.SPOT
+    wait: true
+  - __target__: camkit.camera.set_focus
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AfModeEnum.AUTO
+    not_available_ok: true
+    wait: true
+  - __target__: camkit.utils.save_camera_configs
+    camera:
+      __instance__: camera
+    outdir: {{ output_dir }}
+
+
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.control.simple
+    max_frames: {{ max_frames | default(0) }}
+    fps: {{ fps | default(0.0) }}
+  - __target__: camkit.ops.camera.capture
+    camera:
+      __instance__: camera
+    arrays:
+      - main
+    immediate: true
+  - __target__: camkit.ops.imaging.scale
+    factor: {{ scale_factor | default(1.0) }}
+  - __target__: camkit.ops.debug.dump
+    key: metadata
+    interval: {{ 0.5 }}
+  - __target__: camkit.ops.network.publisher
+

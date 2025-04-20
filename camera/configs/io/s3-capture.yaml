@@ -1,0 +1,13 @@
+
+
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.source.s3_reader
+    profile_name: {{ profile_name | default('default') }}
+    bucket: {{ bucket }}
+    prefix: {{ bucket_prefix }}
+  - __target__: camkit.ops.imaging.scale
+    factor: 0.5
+  - __target__: camkit.ops.sink.save_rgb
+    outdir: {{ output_dir }}
+

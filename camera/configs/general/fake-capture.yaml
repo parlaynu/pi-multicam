@@ -1,0 +1,16 @@
+
+misc:
+  - __target__: camkit.utils.wait_for
+    seconds: 5
+
+
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.control.simple
+    max_frames: {{ max_frames | default(10) }}
+    fps: {{ frames_per_second | default(5) }}
+  - __target__: camkit.ops.debug.fake_capture
+  - __target__: camkit.ops.sink.save_item
+    outdir: {{ output_dir }}
+  - __target__: camkit.ops.sink.save_rgb
+    outdir: {{ output_dir }}

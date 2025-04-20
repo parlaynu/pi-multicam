@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""Convenience wrapper around 'caminfo' functionality.
+
+Here so you can use the tools without having to install this package 
+on your machine. If you do install it using pip, a console script 
+with this name is also installed.
+"""
+from camkit.tools.ck_caminfo import run
+
+if __name__ == "__main__":
+    run()

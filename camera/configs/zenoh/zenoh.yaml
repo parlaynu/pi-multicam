@@ -1,0 +1,63 @@
+# the camera
+camera:
+  __target__: camkit.camera.Camera
+  camera_id: {{ camera_id | default(0) }}
+  mode: {{ camera_mode | default(5) }}
+  max_fps: 15
+  vflip: {{ vflip | default(false) }}
+  hflip: {{ hflip | default(false) }}
+  preview: {{ preview | default(false) }}
+  preview_crop: true
+  preview_crop_offsets:
+    - 0
+    - 0
+
+
+# configure the camera
+configure_cam:
+  - __target__: camkit.camera.set_whitebalance
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AwbModeEnum.AUTO
+  - __target__: camkit.camera.set_exposure
+    camera:
+      __instance__: camera
+    metering_mode:
+      __enum__: camkit.camera.MeteringModeEnum.SPOT
+    wait: true
+  - __target__: camkit.camera.set_focus
+    camera:
+      __instance__: camera
+    mode:
+      __enum__: camkit.camera.AfModeEnum.AUTO
+    not_available_ok: true
+    wait: true
+  - __target__: camkit.utils.save_camera_configs
+    camera:
+      __instance__: camera
+    outdir: {{ output_dir }}
+
+
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.control.simple
+    max_frames: {{ max_frames | default(0) }}
+    fps: {{ fps | default(0.0) }}
+  - __target__: camkit.ops.camera.capture
+    camera:
+      __instance__: camera
+    arrays:
+      - main
+    sync: false
+    immediate: true
+  - __target__: camkit.ops.utils.fps_counter
+  - __target__: camkit.ops.utils.frame_dropper
+    num_drop: 14
+  - __target__: camkit.ops.utils.worker
+  - __target__: camkit.ops.imaging.resize
+    width: 1024
+  - __target__: camkit.ops.encoders.as_image_file
+  - __target__: camkit.ops.zenoh.publisher
+    zenoh_key: home/{{ hostname }}/image
+    ipv4_only: {{ ipv4_only | default(true) }}

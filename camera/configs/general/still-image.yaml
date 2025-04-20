@@ -1,0 +1,10 @@
+# the pipeline of generators
+pipeline:
+  - __target__: camkit.ops.source.still_image
+    image_file: {{ image_file }}
+  - __target__: camkit.ops.imaging.fit_width
+    width: 1024
+  - __target__: camkit.ops.encoders.as_image_file
+  - __target__: camkit.ops.zenoh.publisher
+    zenoh_key: home/{{ hostname }}/image
+    ipv4_only: {{ ipv4_only | default(true) }}
