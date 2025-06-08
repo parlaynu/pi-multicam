@@ -77,7 +77,7 @@ def set_exposure(
         count = 0
         while count < 3:
             mdata = camera.capture_metadata()
-            if mdata['AeLocked'] == True:
+            if mdata.get('AeLocked', True) == True:
                 count += 1
             else:
                 count = 0
